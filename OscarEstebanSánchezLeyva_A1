@@ -1,0 +1,275 @@
+USE master;
+GO
+
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'TiendaSara')
+BEGIN
+    ALTER DATABASE TiendaSara SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE TiendaSara;
+END;
+GO
+
+CREATE DATABASE TiendaSara;
+GO
+
+USE TiendaSara;
+GO
+
+CREATE TABLE Categorías
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+GO
+
+CREATE TABLE Marca
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+GO
+
+CREATE TABLE Producto
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(150) NOT NULL,
+    Precio DECIMAL(10,2) NOT NULL CHECK (Precio >= 0),
+    Cantidad INT NOT NULL CHECK (Cantidad >= 0),
+    idCategoria INT NOT NULL,
+    idMarca INT NOT NULL,
+
+    CONSTRAINT FK_Productos_Categorias
+        FOREIGN KEY (idCategoria)
+        REFERENCES Categorias(Id),
+
+    CONSTRAINT FK_Productos_Marcas
+        FOREIGN KEY (idMarca)
+        REFERENCES Marcas(Id)
+);
+GO
+
+CREATE TABLE Carrito
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    FolioVenta VARCHAR(50) NOT NULL UNIQUE,
+    TotalCompra DECIMAL(10,2) NOT NULL DEFAULT 0.00
+        CHECK (TotalCompra >= 0),
+    Estatus VARCHAR(30) NOT NULL DEFAULT 'Pendiente'
+);
+GO
+
+CREATE TABLE CarritoDetalle
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    IdCarrito INT NOT NULL,
+    IdProducto INT NOT NULL,
+    Cantidad INT NOT NULL CHECK (Cantidad > 0),
+    Subtotal DECIMAL(10,2) NOT NULL CHECK (Subtotal >= 0),
+
+    CONSTRAINT FK_Detalle_Carrito
+        FOREIGN KEY (IdCarrito)
+        REFERENCES Carrito(Id),
+
+    CONSTRAINT FK_Detalle_Productos
+        FOREIGN KEY (IdProducto)
+        REFERENCES Productos(Id)
+);
+GO
+
+INSERT INTO Categorias (Descripcion)
+VALUES
+('Electronica'),
+('Computo'),
+('Ropa'),
+('Accesorios'),
+('Hogar');
+GO
+
+INSERT INTO Marcas (Descripcion)
+VALUES
+('Sony'),
+('Samsung'),
+('ASUS'),
+('HP'),
+('Nike');
+GO
+
+-- ============================================================
+-- INSERTAR 25 PRODUCTOS
+-- 5 ELECTRONICA
+-- 5 COMPUTO
+-- 5 ROPA
+-- 5 ACCESORIOS
+-- 5 HOGAR
+-- ============================================================
+INSERT INTO Producto
+(
+    Descripcion,
+    Precio,
+    Cantidad,
+    idCategoria,
+    idMarca
+)
+VALUES
+-- ============================================================
+-- ELECTRONICA - 5 PRODUCTOS
+-- ============================================================
+('Televisor Sony Bravia 55 Pulgadas 4K', 18999.00, 10, 1, 1),
+('Audifonos Sony WH-1000XM5', 7499.00, 15, 1, 1),
+('Smartphone Samsung Galaxy S25', 21999.00, 12, 1, 2),
+('Tablet Samsung Galaxy Tab S10', 15999.00, 8, 1, 2),
+('Bocina Bluetooth Sony SRS-XB100', 1799.00, 20, 1, 1),
+-- ============================================================
+-- COMPUTO - 5 PRODUCTOS
+-- ============================================================
+('Laptop ASUS ROG Strix G16', 28999.00, 7, 2, 3),
+('Laptop ASUS Vivobook 15', 15999.00, 10, 2, 3),
+('Laptop HP Pavilion 15', 17999.00, 9, 2, 4),
+('Monitor HP 24 Pulgadas Full HD', 4299.00, 14, 2, 4),
+('Teclado ASUS TUF Gaming', 1899.00, 18, 2, 3),
+-- ============================================================
+-- ROPA - 5 PRODUCTOS
+-- ============================================================
+('Tenis Nike Air Max', 2899.00, 20, 3, 5),
+('Playera Nike Sportswear', 899.00, 25, 3, 5),
+('Sudadera Nike Club Fleece', 1699.00, 15, 3, 5),
+('Pantalon Nike Dri-FIT', 1299.00, 18, 3, 5),
+('Gorra Nike Heritage86', 699.00, 22, 3, 5),
+-- ============================================================
+-- ACCESORIOS - 5 PRODUCTOS
+-- ============================================================
+('Mochila ASUS para Laptop', 1299.00, 15, 4, 3),
+('Mouse Inalambrico HP', 599.00, 20, 4, 4),
+('Cargador USB Samsung', 499.00, 25, 4, 2),
+('Audifonos Deportivos Samsung', 899.00, 18, 4, 2),
+('Mousepad ASUS Gaming', 449.00, 20, 4, 3),
+-- ============================================================
+-- HOGAR - 5 PRODUCTOS
+-- ============================================================
+('Refrigerador Samsung French Door', 25999.00, 6, 5, 2),
+('Microondas Samsung 1.1 Pies', 3499.00, 10, 5, 2),
+('Televisor Sony Bravia 43 Pulgadas', 12999.00, 8, 5, 1),
+('Bocina Sony para Hogar', 2499.00, 12, 5, 1),
+('Aspiradora Samsung Jet', 8999.00, 7, 5, 2);
+GO
+
+INSERT INTO Carrito
+(
+    FolioVenta,
+    TotalCompra,
+    Estatus
+)
+VALUES
+('FOL-2026-001', 18999.00, 'Pagado'),
+('FOL-2026-002', 28999.00, 'Pagado'),
+('FOL-2026-003', 2899.00, 'Pendiente'),
+('FOL-2026-004', 4299.00, 'Completado'),
+('FOL-2026-005', 1798.00, 'Pendiente');
+GO
+
+INSERT INTO CarritoDetalle
+(
+    IdCarrito,
+    IdProducto,
+    Cantidad,
+    Subtotal
+)
+VALUES
+(1, 1, 1, 18999.00),
+(2, 6, 1, 28999.00),
+(3, 11, 1, 2899.00),
+(4, 9, 1, 4299.00),
+(5, 12, 2, 1798.00);
+GO
+
+SELECT
+    P.Id AS ProductoID,
+    P.Descripcion AS Producto,
+    P.Precio,
+    P.Cantidad AS Stock,
+    C.Descripcion AS Categoria,
+    M.Descripcion AS Marca
+FROM Productos P
+INNER JOIN Categorias C
+    ON P.idCategoria = C.Id
+INNER JOIN Marcas M
+    ON P.idMarca = M.Id
+ORDER BY C.Id, P.Id;
+GO
+
+SELECT
+    C.FolioVenta,
+    C.Estatus,
+    P.Descripcion AS Producto,
+    CD.Cantidad,
+    CD.Subtotal
+FROM Carrito C
+INNER JOIN CarritoDetalle CD
+    ON C.Id = CD.IdCarrito
+INNER JOIN Productos P
+    ON CD.IdProducto = P.Id;
+GO
+
+SELECT
+    C.FolioVenta,
+    C.Estatus,
+    P.Descripcion AS Producto,
+    M.Descripcion AS Marca,
+    CAT.Descripcion AS Categoria,
+    P.Precio,
+    CD.Cantidad,
+    CD.Subtotal
+FROM Carrito C
+INNER JOIN CarritoDetalle CD
+    ON C.Id = CD.IdCarrito
+INNER JOIN Productos P
+    ON CD.IdProducto = P.Id
+INNER JOIN Marcas M
+    ON P.idMarca = M.Id
+INNER JOIN Categorias CAT
+    ON P.idCategoria = CAT.Id;
+GO
+
+SELECT
+    P.Id,
+    P.Descripcion AS Producto,
+    P.Precio,
+    P.Cantidad AS Stock,
+    C.Descripcion AS Categoria,
+    M.Descripcion AS Marca
+FROM Productos P
+INNER JOIN Categorias C
+    ON P.idCategoria = C.Id
+INNER JOIN Marcas M
+    ON P.idMarca = M.Id
+WHERE C.Descripcion = 'Electronica';
+GO
+
+SELECT
+    P.Id,
+    P.Descripcion AS Producto,
+    P.Precio,
+    P.Cantidad AS Stock,
+    C.Descripcion AS Categoria,
+    M.Descripcion AS Marca
+FROM Productos P
+INNER JOIN Categorias C
+    ON P.idCategoria = C.Id
+INNER JOIN Marcas M
+    ON P.idMarca = M.Id
+WHERE C.Descripcion = 'Computo';
+GO
+
+SELECT
+    P.Id,
+    P.Descripcion AS Producto,
+    P.Precio,
+    P.Cantidad AS Stock,
+    C.Descripcion AS Categoria,
+    M.Descripcion AS Marca
+FROM Productos P
+INNER JOIN Categorias C
+    ON P.idCategoria = C.Id
+INNER JOIN Marcas M
+    ON P.idMarca = M.Id
+WHERE C.Descripcion = 'Ropa';
+GO
